@@ -2,6 +2,7 @@ import datetime
 from flask import Flask, request, abort
 from flask_cors import CORS
 import zmq
+import time
 
 """
 Sources:
@@ -31,19 +32,26 @@ def set_source():
     if source not in ['0', '1', '2']:
         return 'Invalid source. Please select 0, 1, or 2.', 400
 
+    with open(LOG_FILE, "a") as log_file:
+        log_file.write(f"{str(datetime.datetime.now())}: Selected {source}\n")
+
     with open(FILE_PATH, 'w') as file:
         file.write(source)
 
     socket = ctx.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
-    for i in range(3):
-        socket.send(bytes(f"volume@s{i} volume 0", "UTF-8"))
-        socket.recv()
-    socket.send(bytes(f"volume@s{source} volume 1", "UTF-8"))
-    socket.recv()
 
-    with open(LOG_FILE, "a") as log_file:
-        log_file.write(f"{str(datetime.datetime.now())}: Selected {source}\n")
+    current_source = get_source()[0]
+    
+    # crossfade the sources
+    for i in range(6):
+        socket.send(bytes(f"volume@s{current_source} volume {(5-i)/5}", "UTF-8"))
+        socket.recv()
+
+        socket.send(bytes(f"volume@s{source} volume {i/5}", "UTF-8"))
+        socket.recv()
+
+        time.sleep(3/5)
 
     return 'Source set successfully.', 200
 
