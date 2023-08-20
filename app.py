@@ -32,17 +32,14 @@ def set_source():
     if source not in ['0', '1', '2']:
         return 'Invalid source. Please select 0, 1, or 2.', 400
 
+    current_source = get_source()[0]
+
     with open(LOG_FILE, "a") as log_file:
         log_file.write(f"{str(datetime.datetime.now())}: Selected {source}\n")
-
-    with open(FILE_PATH, 'w') as file:
-        file.write(source)
 
     socket = ctx.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
 
-    current_source = get_source()[0]
-    
     # crossfade the sources
     for i in range(1, 6):
         socket.send(bytes(f"volume@s{current_source} volume {(5-i)/5}", "UTF-8"))
@@ -52,6 +49,9 @@ def set_source():
         socket.recv()
 
         time.sleep(3/5)
+
+    with open(FILE_PATH, 'w') as file:
+        file.write(source)
 
     return 'Source set successfully.', 200
 
