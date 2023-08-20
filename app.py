@@ -44,7 +44,7 @@ def set_source():
     current_source = get_source()[0]
     
     # crossfade the sources
-    for i in range(6):
+    for i in range(1, 6):
         socket.send(bytes(f"volume@s{current_source} volume {(5-i)/5}", "UTF-8"))
         socket.recv()
 
