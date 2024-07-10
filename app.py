@@ -37,16 +37,25 @@ def set_source():
     with open(LOG_FILE, "a") as log_file:
         log_file.write(f"{str(datetime.datetime.now())}: Selected {source}\n")
 
-    socket = ctx.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5555")
+    socket_fm = ctx.socket(zmq.REQ)
+    socket_fm.connect("tcp://localhost:5555")
+
+    socket_dab = ctx.socket(zmq.REQ)
+    socket_dab.connect("tcp://localhost:5556")
 
     # crossfade the sources
     for i in range(1, 6):
-        socket.send(bytes(f"volume@s{current_source} volume {(5-i)/5}", "UTF-8"))
-        socket.recv()
+        socket_fm.send(bytes(f"volume@s{current_source} volume {(5-i)/5}", "UTF-8"))
+        socket_fm.recv()
 
-        socket.send(bytes(f"volume@s{source} volume {i/5}", "UTF-8"))
-        socket.recv()
+        socket_dab.send(bytes(f"volume@s{current_source} volume {(5-i)/5}", "UTF-8"))
+        socket_dab.recv()
+
+        socket_fm.send(bytes(f"volume@s{source} volume {i/5}", "UTF-8"))
+        socket_fm.recv()
+
+        socket_dab.send(bytes(f"volume@s{source} volume {i/5}", "UTF-8"))
+        socket_dab.recv()
 
         time.sleep(3/5)
 
