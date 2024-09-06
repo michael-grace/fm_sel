@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Source Selector</title>
+    <title>URY Router</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .source-button {
             margin: 5px;
-            height: 8rem;
-            width: 8rem;
+            height: 5rem;
+            width: 5rem;
         }
         .active-source {
             background-color: #0d6efd;
@@ -22,19 +22,65 @@
 
 <body>
     <div class="container">
-        <h1 class="mt-5">Source Selector</h1>
+        <h2 class="mt-5">URY Router</h2>
 
-        <h3>Current PGM Source: <span class="badge bg-info" id="current-pgm"></span></h3>
+        <h4 class="mt-4">PGM Sources</h4>
+        <div id="pgm-sources" class="btn-group" role="group" aria-label="PGM Sources"></div>
 
-        <h2 class="mt-4">FM Sources</h2>
+        <table>
+            <tr>
+                <td>
+            
+
+        <h4 class="mt-4">FM Sources</h4>
         <div id="fm-sources" class="btn-group" role="group" aria-label="FM Sources">
             <!-- Buttons will be dynamically created here -->
         </div>
 
-        <h2 class="mt-4">DAB Sources</h2>
+    </td><td>
+
+        <h4 class="mt-4">FM RDS</h4>
+        <div id="fm-rds" class="btn-group" role="group" aria-label="FM RDS"></div>
+
+        </td><td>
+
+            <h4 class="mt-4">FM TX &nbsp; <span class="badge bg-warning text-dark">INOP</span></h4>
+            
+            <div id="fm-tx" class="btn-group" role="group" aria-label="FM TX"></div>
+
+        </td></tr>
+
+        <tr><td>
+
+        <h4 class="mt-4">DAB Sources</h4>
         <div id="dab-sources" class="btn-group" role="group" aria-label="DAB Sources">
             <!-- Buttons will be dynamically created here -->
         </div>
+
+       </td><td>
+
+        <h4 class="mt-4">DAB DLS</h4>
+        <div id="dab-dls" class="btn-group" role="group" aria-label="DAB DLS"></div>
+
+        </td><td>
+            <h4 class="mt-4">DAB TX &nbsp; <span class="badge bg-warning text-dark">INOP</span></h4>
+            <div id="dab-tx" class="btn-group" role="group" aria-label="DAB TX"></div>
+
+        </td></tr>
+    
+        <tr><td> <h4 class="mt-4">JBOX ANEWS &nbsp; <span class="badge bg-warning text-dark small">INOP</span></h4>
+            <div id="jbox-anews" class="btn-group" role="group" aria-label="JBOX ANEWS"></div></td>
+        
+        <td><h4 class="mt-4">SEL Lock</h4>
+            <div id="sel-lock" class="btn-group" role="group" aria-label="SEL Lock"></div></td>
+        
+        </tr>
+
+        
+    
+    </table>
+
+       
     </div>
 
     <!-- Bootstrap JS and Popper.js -->
@@ -46,9 +92,14 @@
         const fmSources = [0, 1, 2]; // FM can only support sources 0, 1, 2
         const dabSources = [0, 1, 2, 3]; // DAB can support sources 0, 1, 2, 3
 
-        const studioSources = ["RED", "BLUE", "JBOX", "OB", "WS+ANEWS", "", "SINE", "OFFAIR"]
+        const textOptions = ["RUN", "PAUSE", "STOP"];
 
-        const publicAPIKey = "9C4KCqywpDfzIk7OEhYO3tOjDJWftg2sZ65fKT5fTGCWvshnz5tinVt1MiqvETM4eZYDtQbRs13GoTCNB8HTsmQQlcDwFmRo8Xw3uHQoycYkumyTVGdXbxtt1S2Ow7RFbK";
+        const studioSources = ["RED", "BLUE", "JBOX", "OB", "WS +\nANEWS", "BLANK", "SINE", "OFFAIR"];
+
+        const onOffOptions = ["OFF", "ON"];
+
+        const fmTxOptions = ["RTP", "HTTP", "LOCAL"];
+        const dabTxOptions = ["MAIN", "ALT"];
 
         // Function to update source buttons and poll the current source status
         function updateSourceButtons() {
@@ -77,11 +128,104 @@
                         .on("click", function () { changeSource("dab", source); });
                     $("#dab-sources").append(button);
                 });
+
+                
             });
 
-            $.get("https://ury.org.uk/api/v2/selector/statusattime?api_key=" + publicAPIKey, function(data) {
-                let studio = data.payload.studio;
-                $("#current-pgm").text(studioSources[studio-1]);
+            $.get("/v2/programmedata", function(data) {
+                $("#fm-rds").empty();
+                $("#dab-dls").empty();
+                textOptions.forEach((op, idx) => {
+                    let button = $("<button>")
+                        .addClass("btn btn-outline-primary source-button")
+                        .toggleClass("active-source", idx == data.fm)
+                        .on("click", () => {
+                            $.post(`/v2/programmedata/fm/${idx}`, () => {
+                                updateSourceButtons();
+                            })
+                        })
+                        .text(op);
+                    $("#fm-rds").append(button);
+
+                    button = $("<button>")
+                        .addClass("btn btn-outline-primary source-button")
+                        .toggleClass("active-source", idx == data.dab)
+                        .on("click", () => {
+                            $.post(`/v2/programmedata/dab/${idx}`, () => {
+                                updateSourceButtons();
+                            })
+                        })
+                        .text(op);
+                    $("#dab-dls").append(button);
+                })
+            });
+            
+            $.get("/v2/sellock", function(data) {
+                $("#sel-lock").empty();
+                onOffOptions.forEach((op, idx) => {
+                        button = $("<button>")
+                            .addClass("btn btn-outline-primary source-button")
+                            .toggleClass("active-source", (op == "ON" && data) || (op == "OFF" && !data))
+                            .on("click", function () { 
+                                $.post(`/v2/sellock/${idx}`, () => {
+                                    updateSourceButtons();
+                                })
+                            })
+                            .text(op);
+                        $("#sel-lock").append(button);
+                });
+            });
+
+            $.get("/v2/jboxanews", function(data) {
+                $("#jbox-anews").empty();
+
+                onOffOptions.forEach((op, idx) => {
+                    let button = $("<button>")
+                            .toggleClass("active-source", (op == "ON" && data) || (op == "OFF" && !data))
+                            .addClass("btn btn-outline-primary source-button")
+                            .on("click", function () { 
+                                $.post(`/v2/jboxanews/${idx}`, () => {
+                                    updateSourceButtons();
+                                })
+                            })
+                            .text(op);
+                        $("#jbox-anews").append(button);
+                });
+
+            })
+
+            $("#fm-tx").empty();
+            fmTxOptions.forEach(op => {
+
+                let button = $("<button>")
+                        .addClass("btn btn-outline-primary source-button")
+                        .text(op);
+                    $("#fm-tx").append(button);
+            }
+            )
+
+            $("#dab-tx").empty();
+            dabTxOptions.forEach(op => {
+                let button = $("<button>")
+                        .addClass("btn btn-outline-primary source-button")
+                        .text(op);
+                    $("#dab-tx").append(button);
+            })
+
+            $.get("/v2/studio", function(data) {
+                $("#pgm-sources").empty();
+                studioSources.forEach((source, idx) => {
+                    const button = $("<button>")
+                        .addClass("btn btn-outline-primary source-button")
+                        .toggleClass("active-source", data - 1 == idx)
+                        .text(source)
+                        .on("click", function () { 
+                            $.post(`/v2/studio/${idx+1}`, () => {
+                                updateSourceButtons();
+                            })
+                         });
+                    $("#pgm-sources").append(button);
+                })
             });
         }
 

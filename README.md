@@ -1,3 +1,6 @@
+> [!CAUTION]
+> The README is out of date, and needs updating.
+
 ## yoooo, it's the FM source selector
 
 yeah, so this is what gets streamed to the FM transmitter, and doesn't consider the fallbacks on the transmitter side
