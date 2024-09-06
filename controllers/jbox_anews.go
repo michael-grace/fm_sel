@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 )
@@ -16,13 +17,13 @@ func GetJboxAnewsStateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch string(data) {
-	case "0":
+	switch string(data)[0] {
+	case '0':
 		state = false
-	case "1":
+	case '1':
 		state = true
 	default:
-		http.Error(w, "invalid state", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("invalid state: %v", string(data)), http.StatusInternalServerError)
 		return
 	}
 
