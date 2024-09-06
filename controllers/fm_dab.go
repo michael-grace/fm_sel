@@ -34,12 +34,12 @@ func SetFMAndDABHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go zmq_crossfade("fm", currentSourceState.FM, source)
-	go zmq_crossfade("dab", currentSourceState.DAB, source)
+	// go zmq_crossfade("dab", currentSourceState.DAB, source)
 
 	logSourceChange("fm", source)
-	logSourceChange("dab", source)
+	// logSourceChange("dab", source)
 
-	newSourceState := SourceState{FM: source, DAB: source}
+	newSourceState := SourceState{FM: source, DAB: currentSourceState.DAB}
 	saveSourceState(newSourceState)
 
 	fmt.Fprintln(w, "Source set succesfully.")
